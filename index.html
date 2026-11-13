@@ -33,6 +33,9 @@ button svg.ic{width:15px;height:15px}
 .header-right{display:flex;align-items:center;gap:8px}
 .btn-login{display:inline-flex;align-items:center;gap:6px;height:32px;padding:0 12px;border-radius:var(--r);border:1px solid rgba(255,255,255,.3);background:transparent;color:#fff;font-size:13px;font-weight:600;cursor:pointer}
 .btn-login:hover{background:rgba(255,255,255,.1)}
+.btn-icon{display:inline-flex;align-items:center;justify-content:center;width:32px;height:32px;padding:0;border-radius:var(--r);border:1px solid rgba(255,255,255,.3);background:transparent;color:#fff;cursor:pointer}
+.btn-icon:hover{background:rgba(255,255,255,.1)}
+.btn-icon svg{width:16px;height:16px}
 .role-chip,.conn-chip{display:inline-flex;align-items:center;gap:6px;height:26px;padding:0 10px;border-radius:var(--r);font-size:12px;font-weight:600;white-space:nowrap}
 .role-chip{color:#fff;background:rgba(255,255,255,.12)}
 .chip-dev{background:var(--gold);color:#fff}
@@ -40,6 +43,8 @@ button svg.ic{width:15px;height:15px}
 .conn-chip{color:rgba(255,255,255,.7);background:transparent;padding:0 4px;font-weight:500}
 .conn-chip::before{content:"";width:7px;height:7px;border-radius:50%;background:currentColor;opacity:.9}
 .c-ok{color:#8fe0b0}.c-off{color:#f0cf7a}.c-err{color:#ffb3ab}.c-ld{color:#cfd8e6}
+.conn-chip.clickable{cursor:pointer;padding:2px 8px;border-radius:4px;border:1px dashed currentColor}
+.conn-chip.clickable:hover{background:rgba(255,255,255,.08)}
 .spin{display:none}
 @keyframes spin{to{transform:rotate(360deg)}}
 
@@ -186,6 +191,18 @@ td.note{max-width:220px;font-size:12.5px}
 .toggle-pass{position:absolute;right:8px;top:50%;transform:translateY(-50%);background:none;border:0;cursor:pointer;color:var(--ink-3);display:flex;padding:4px}
 .pass-hint{font-size:12px;text-align:center;margin-top:4px}
 
+/* settings modal */
+.settings-info{font-size:12.5px;color:var(--ink-2);background:var(--navy-soft);border-radius:var(--r);padding:10px 12px;margin-bottom:14px;line-height:1.6}
+.settings-info b{color:var(--navy)}
+.url-input{font-family:'Consolas','Monaco',monospace;font-size:12.5px!important}
+.settings-note{font-size:12px;color:var(--ink-3);border-top:1px solid var(--line);margin-top:14px;padding-top:12px;line-height:1.7}
+.settings-note b{color:var(--ink-2)}
+.test-result{font-size:13px;margin-top:8px;padding:8px 10px;border-radius:var(--r);display:none}
+.test-result.show{display:block}
+.test-ok{background:var(--pos-soft);color:var(--pos);border:1px solid #c7e6d2}
+.test-err{background:var(--neg-soft);color:var(--neg);border:1px solid #f0cecb}
+.test-info{background:var(--bg);color:var(--ink-2);border:1px solid var(--line)}
+
 /* toast */
 .toast-container{position:fixed;bottom:20px;right:20px;z-index:9999;display:flex;flex-direction:column;gap:8px;pointer-events:none}
 .toast{background:var(--ink);color:#fff;padding:10px 14px;border-radius:var(--r);font-size:13px;display:flex;align-items:center;gap:8px;min-width:220px;max-width:340px;pointer-events:all;animation:toastIn .2s ease;box-shadow:0 8px 24px rgba(0,0,0,.18)}
@@ -215,16 +232,12 @@ td.note{max-width:220px;font-size:12.5px}
 </head>
 <body>
 
-<!-- ══ LOADING ══ -->
 <div id="ld-overlay" class="loading-overlay">
   <div class="loader"></div>
   <div class="loader-text" id="ld-text">กำลังดำเนินการ...</div>
 </div>
-
-<!-- ══ TOAST CONTAINER ══ -->
 <div id="toast-wrap" class="toast-container"></div>
 
-<!-- ══ HEADER ══ -->
 <header class="app-header">
   <div class="logo-wrap">
     <div class="logo-chip">CULAC</div>
@@ -233,13 +246,15 @@ td.note{max-width:220px;font-size:12.5px}
   <div class="header-right">
     <span id="conn-chip" class="conn-chip c-ld">กำลังโหลด</span>
     <span id="role-chip" class="role-chip chip-lock"><svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><rect x="4" y="11" width="16" height="10" rx="2"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/></svg> อ่านอย่างเดียว</span>
+    <button class="btn-icon" id="settings-btn" onclick="openSettingsModal()" title="ตั้งค่าระบบ" aria-label="ตั้งค่าระบบ">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
+    </button>
     <button class="btn-login" id="login-btn" onclick="openLoginModal()">
       <svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="8" r="4"/><path d="M4 21a8 8 0 0 1 16 0"/></svg> เข้าสู่ระบบ
     </button>
   </div>
 </header>
 
-<!-- ══ TAB BAR ══ -->
 <div class="tab-bar">
   <button class="tab-btn active" id="btn-w" onclick="switchTab('w')">
     <svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><path d="M14 3H6a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V9z"/><path d="M14 3v6h6"/></svg> ลดหย่อน/ยกเว้น <span class="tab-count" id="cnt-w">0</span>
@@ -249,7 +264,6 @@ td.note{max-width:220px;font-size:12.5px}
   </button>
 </div>
 
-<!-- ══ TAB W ══ -->
 <div id="pane-w" class="tab-pane active">
   <div class="wrap">
     <div class="toolbar">
@@ -258,12 +272,12 @@ td.note{max-width:220px;font-size:12.5px}
           <span class="search-icon"><svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg></span>
           <input type="text" id="search-w" placeholder="ค้นหาเลขโครงการ หรือชื่อหัวหน้า..." oninput="renderList('w')">
         </div>
-        <select id="fil-w" onchange="renderList('w')" style="padding:8px 12px;border-radius:8px;border:1.5px solid var(--line-2);font-size:13px;background:white;cursor:pointer;">
+        <select id="fil-w" onchange="renderList('w')">
           <option value="ดำเนินการ" selected>กำลังดำเนินการ</option>
           <option value="เสร็จสิ้น">ปิดแล้ว</option>
           <option value="all">ทั้งหมด</option>
         </select>
-        <select id="sort-w" onchange="renderList('w')" style="padding:8px 12px;border-radius:8px;border:1.5px solid var(--line-2);font-size:13px;background:white;cursor:pointer;">
+        <select id="sort-w" onchange="renderList('w')">
           <option value="code">เรียง: รหัส</option>
           <option value="budget">เรียง: วงเงินสูง→ต่ำ</option>
           <option value="pct">เรียง: % ใช้จ่ายสูง→ต่ำ</option>
@@ -293,41 +307,27 @@ td.note{max-width:220px;font-size:12.5px}
       <div class="tscroll">
         <table style="min-width:820px;">
           <thead><tr>
-            <th>รหัสโครงการ</th>
-            <th>ชื่อโครงการ</th>
-            <th class="hide-sm">หัวหน้าโครงการ</th>
-            <th class="tr">วงเงิน</th>
-            <th class="tr">ใช้ไป</th>
-            <th class="tr hide-sm">คงเหลือ</th>
-            <th class="tc">%</th>
-            <th class="tc hide-sm">สถานะ</th>
-            <th class="tc">จัดการ</th>
+            <th>รหัสโครงการ</th><th>ชื่อโครงการ</th><th class="hide-sm">หัวหน้าโครงการ</th>
+            <th class="tr">วงเงิน</th><th class="tr">ใช้ไป</th><th class="tr hide-sm">คงเหลือ</th>
+            <th class="tc">%</th><th class="tc hide-sm">สถานะ</th><th class="tc">จัดการ</th>
           </tr></thead>
           <tbody id="tbody-w"></tbody>
         </table>
       </div>
     </div>
-
-    <!-- หมวดโครงการที่ปิดแล้ว (พับได้) -->
     <div class="tcard closed-card" id="closedcard-w" style="display:none;">
       <div class="tcard-head closed-head" onclick="toggleClosed('w')">
         <span class="tcard-title" style="color:var(--ink-3);">
-          <span id="closed-arrow-w" class="chev"><svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><path d="m9 6 6 6-6 6"/></svg></span> <svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="4" width="18" height="4" rx="1"/><path d="M5 8v11a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1V8M10 12h4"/></svg> โครงการที่ปิดแล้ว <span id="closedcnt-w" style="font-weight:400;font-size:13px;"></span>
+          <span id="closed-arrow-w" class="chev"><svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><path d="m9 6 6 6-6 6"/></svg></span> โครงการที่ปิดแล้ว <span id="closedcnt-w" style="font-weight:400;font-size:13px;"></span>
         </span>
         <span style="font-size:12px;color:var(--ink-3);">คลิกเพื่อแสดง/ซ่อน</span>
       </div>
       <div class="tscroll" id="closedbody-wrap-w" style="display:none;">
         <table style="min-width:820px;">
           <thead><tr>
-            <th>รหัสโครงการ</th>
-            <th>ชื่อโครงการ</th>
-            <th class="hide-sm">หัวหน้าโครงการ</th>
-            <th class="tr">วงเงิน</th>
-            <th class="tr">ใช้ไป</th>
-            <th class="tr hide-sm">คงเหลือ</th>
-            <th class="tc">%</th>
-            <th class="tc hide-sm">สถานะ</th>
-            <th class="tc">จัดการ</th>
+            <th>รหัสโครงการ</th><th>ชื่อโครงการ</th><th class="hide-sm">หัวหน้าโครงการ</th>
+            <th class="tr">วงเงิน</th><th class="tr">ใช้ไป</th><th class="tr hide-sm">คงเหลือ</th>
+            <th class="tc">%</th><th class="tc hide-sm">สถานะ</th><th class="tc">จัดการ</th>
           </tr></thead>
           <tbody id="closedbody-w"></tbody>
         </table>
@@ -338,7 +338,6 @@ td.note{max-width:220px;font-size:12.5px}
   </div>
 </div>
 
-<!-- ══ TAB A ══ -->
 <div id="pane-a" class="tab-pane">
   <div class="wrap">
     <div class="toolbar">
@@ -347,12 +346,12 @@ td.note{max-width:220px;font-size:12.5px}
           <span class="search-icon"><svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg></span>
           <input type="text" id="search-a" placeholder="ค้นหาเลขโครงการ หรือชื่อหัวหน้า..." oninput="renderList('a')">
         </div>
-        <select id="fil-a" onchange="renderList('a')" style="padding:8px 12px;border-radius:8px;border:1.5px solid var(--line-2);font-size:13px;background:white;cursor:pointer;">
+        <select id="fil-a" onchange="renderList('a')">
           <option value="ดำเนินการ" selected>กำลังดำเนินการ</option>
           <option value="เสร็จสิ้น">ปิดแล้ว</option>
           <option value="all">ทั้งหมด</option>
         </select>
-        <select id="sort-a" onchange="renderList('a')" style="padding:8px 12px;border-radius:8px;border:1.5px solid var(--line-2);font-size:13px;background:white;cursor:pointer;">
+        <select id="sort-a" onchange="renderList('a')">
           <option value="code">เรียง: รหัส</option>
           <option value="budget">เรียง: วงเงินสูง→ต่ำ</option>
           <option value="pct">เรียง: % ใช้จ่ายสูง→ต่ำ</option>
@@ -382,41 +381,27 @@ td.note{max-width:220px;font-size:12.5px}
       <div class="tscroll">
         <table style="min-width:820px;">
           <thead><tr>
-            <th>รหัสโครงการ</th>
-            <th>ชื่อโครงการ</th>
-            <th class="hide-sm">หัวหน้าโครงการ</th>
-            <th class="tr">วงเงิน</th>
-            <th class="tr">เบิกล่วงหน้า</th>
-            <th class="tr hide-sm">คงเหลือ</th>
-            <th class="tc">%</th>
-            <th class="tc hide-sm">สถานะ</th>
-            <th class="tc">จัดการ</th>
+            <th>รหัสโครงการ</th><th>ชื่อโครงการ</th><th class="hide-sm">หัวหน้าโครงการ</th>
+            <th class="tr">วงเงิน</th><th class="tr">เบิกล่วงหน้า</th><th class="tr hide-sm">คงเหลือ</th>
+            <th class="tc">%</th><th class="tc hide-sm">สถานะ</th><th class="tc">จัดการ</th>
           </tr></thead>
           <tbody id="tbody-a"></tbody>
         </table>
       </div>
     </div>
-
-    <!-- หมวดโครงการที่ปิดแล้ว (พับได้) -->
     <div class="tcard closed-card" id="closedcard-a" style="display:none;">
       <div class="tcard-head closed-head" onclick="toggleClosed('a')">
         <span class="tcard-title" style="color:var(--ink-3);">
-          <span id="closed-arrow-a" class="chev"><svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><path d="m9 6 6 6-6 6"/></svg></span> <svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="4" width="18" height="4" rx="1"/><path d="M5 8v11a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1V8M10 12h4"/></svg> โครงการที่ปิดแล้ว <span id="closedcnt-a" style="font-weight:400;font-size:13px;"></span>
+          <span id="closed-arrow-a" class="chev"><svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><path d="m9 6 6 6-6 6"/></svg></span> โครงการที่ปิดแล้ว <span id="closedcnt-a" style="font-weight:400;font-size:13px;"></span>
         </span>
         <span style="font-size:12px;color:var(--ink-3);">คลิกเพื่อแสดง/ซ่อน</span>
       </div>
       <div class="tscroll" id="closedbody-wrap-a" style="display:none;">
         <table style="min-width:820px;">
           <thead><tr>
-            <th>รหัสโครงการ</th>
-            <th>ชื่อโครงการ</th>
-            <th class="hide-sm">หัวหน้าโครงการ</th>
-            <th class="tr">วงเงิน</th>
-            <th class="tr">ใช้ไป</th>
-            <th class="tr hide-sm">คงเหลือ</th>
-            <th class="tc">%</th>
-            <th class="tc hide-sm">สถานะ</th>
-            <th class="tc">จัดการ</th>
+            <th>รหัสโครงการ</th><th>ชื่อโครงการ</th><th class="hide-sm">หัวหน้าโครงการ</th>
+            <th class="tr">วงเงิน</th><th class="tr">ใช้ไป</th><th class="tr hide-sm">คงเหลือ</th>
+            <th class="tc">%</th><th class="tc hide-sm">สถานะ</th><th class="tc">จัดการ</th>
           </tr></thead>
           <tbody id="closedbody-a"></tbody>
         </table>
@@ -427,7 +412,42 @@ td.note{max-width:220px;font-size:12.5px}
   </div>
 </div>
 
-<!-- ══ MODAL: LOGIN ══ -->
+<!-- ══ SETTINGS MODAL ══ -->
+<div id="settings-modal" class="modal-backdrop">
+  <div class="modal-box" style="max-width:560px;">
+    <div class="modal-header">
+      <span class="modal-title">ตั้งค่าระบบ</span>
+      <button class="modal-close" onclick="closeModal('settings-modal')" aria-label="ปิด"><svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><path d="M18 6 6 18M6 6l12 12"/></svg></button>
+    </div>
+    <div class="modal-body">
+      <div class="settings-info">
+        ใส่ URL ของ <b>Google Apps Script Web App</b> ที่ Deploy แล้ว — ไม่ต้องแก้ไฟล์ HTML อีก<br>
+        ค่าจะถูกเก็บไว้ในเบราว์เซอร์นี้ และใช้ทุกครั้งที่เปิดหน้าเว็บ
+      </div>
+      <div class="form-group" style="margin-bottom:10px;">
+        <label class="form-label">Google Apps Script Web App URL</label>
+        <input type="text" id="set-gas-url" class="url-input" placeholder="https://script.google.com/macros/s/AKfy.../exec" autocomplete="off" spellcheck="false">
+      </div>
+      <div class="form-row" style="margin-bottom:10px;">
+        <button type="button" class="btn btn-secondary" onclick="testGasConnection()" style="flex:1;">ทดสอบการเชื่อมต่อ</button>
+        <button type="button" class="btn btn-ghost" onclick="clearGasUrl()" style="flex:1;">ล้างค่า (โหมดออฟไลน์)</button>
+      </div>
+      <div id="set-test-result" class="test-result"></div>
+      <div class="settings-note">
+        <b>หมายเหตุ:</b><br>
+        • URL ต้องมาจาก Apps Script ที่ Deploy แบบ <b>Execute as: Me</b> และ <b>Who has access: Anyone</b><br>
+        • รหัสผ่านผู้ใช้ (developer/viewer) จัดการที่ Apps Script → Script Properties ชื่อ <code>CULAC_PWD</code><br>
+        • ถ้าไม่ตั้งค่า URL ระบบจะทำงานออฟไลน์ (ใช้ข้อมูลในเครื่อง + DEMO)
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-secondary" onclick="closeModal('settings-modal')">ปิด</button>
+      <button class="btn btn-primary" onclick="saveSettings()">บันทึก</button>
+    </div>
+  </div>
+</div>
+
+<!-- ══ LOGIN MODAL ══ -->
 <div id="login-modal" class="modal-backdrop">
   <div class="modal-box login-modal-box">
     <div class="modal-header">
@@ -451,7 +471,6 @@ td.note{max-width:220px;font-size:12.5px}
   </div>
 </div>
 
-<!-- ══ MODAL: PROJECT ══ -->
 <div id="proj-modal" class="modal-backdrop">
   <div class="modal-box">
     <div class="modal-header">
@@ -488,7 +507,6 @@ td.note{max-width:220px;font-size:12.5px}
   </div>
 </div>
 
-<!-- ══ MODAL: TRANSACTION ══ -->
 <div id="tx-modal" class="modal-backdrop">
   <div class="modal-box">
     <div class="modal-header">
@@ -539,10 +557,15 @@ td.note{max-width:220px;font-size:12.5px}
 <script>
 var ICONS={"plus": "<path d=\"M12 5v14M5 12h14\"/>", "save": "<path d=\"M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z\"/><path d=\"M17 21v-8H7v8M7 3v5h8\"/>", "refresh": "<path d=\"M21 12a9 9 0 0 1-15.5 6.3L3 16\"/><path d=\"M3 12a9 9 0 0 1 15.5-6.3L21 8\"/><path d=\"M21 3v5h-5M3 21v-5h5\"/>", "sheet": "<rect x=\"3\" y=\"3\" width=\"18\" height=\"18\" rx=\"2\"/><path d=\"M3 9h18M3 15h18M9 3v18\"/>", "archive": "<rect x=\"3\" y=\"4\" width=\"18\" height=\"4\" rx=\"1\"/><path d=\"M5 8v11a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1V8M10 12h4\"/>", "upload": "<path d=\"M12 16V4M6 10l6-6 6 6\"/><path d=\"M4 20h16\"/>", "folder": "<path d=\"M3 7a2 2 0 0 1 2-2h4l2 2h8a2 2 0 0 1 2 2v9a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z\"/>", "folderopen": "<path d=\"M3 7a2 2 0 0 1 2-2h4l2 2h8a2 2 0 0 1 2 2v1H6l-3 7z\"/><path d=\"M3 17V7\"/>", "search": "<circle cx=\"11\" cy=\"11\" r=\"7\"/><path d=\"m20 20-3.5-3.5\"/>", "user": "<circle cx=\"12\" cy=\"8\" r=\"4\"/><path d=\"M4 21a8 8 0 0 1 16 0\"/>", "lock": "<rect x=\"4\" y=\"11\" width=\"16\" height=\"10\" rx=\"2\"/><path d=\"M8 11V7a4 4 0 0 1 8 0v4\"/>", "unlock": "<rect x=\"4\" y=\"11\" width=\"16\" height=\"10\" rx=\"2\"/><path d=\"M8 11V7a4 4 0 0 1 7.5-2\"/>", "eye": "<path d=\"M2 12s4-7 10-7 10 7 10 7-4 7-10 7S2 12 2 12z\"/><circle cx=\"12\" cy=\"12\" r=\"3\"/>", "edit": "<path d=\"M12 20h9\"/><path d=\"M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4z\"/>", "trash": "<path d=\"M3 6h18M8 6V4h8v2M6 6l1 14h10l1-14\"/>", "list": "<path d=\"M8 6h13M8 12h13M8 18h13M3 6h.01M3 12h.01M3 18h.01\"/>", "print": "<path d=\"M6 9V3h12v6\"/><rect x=\"3\" y=\"9\" width=\"18\" height=\"8\" rx=\"2\"/><path d=\"M6 17v4h12v-4\"/>", "back": "<path d=\"m15 18-6-6 6-6\"/>", "undo": "<path d=\"M3 7v6h6\"/><path d=\"M21 17a9 9 0 0 0-15-6.7L3 13\"/>", "chev": "<path d=\"m9 6 6 6-6 6\"/>", "check": "<path d=\"M20 6 9 17l-5-5\"/>", "x": "<path d=\"M18 6 6 18M6 6l12 12\"/>", "alert": "<path d=\"M12 9v4M12 17h.01\"/><path d=\"M10.3 3.9 1.8 18a2 2 0 0 0 1.7 3h17a2 2 0 0 0 1.7-3L13.7 3.9a2 2 0 0 0-3.4 0z\"/>", "info": "<circle cx=\"12\" cy=\"12\" r=\"9\"/><path d=\"M12 8h.01M11 12h1v4h1\"/>", "bulb": "<path d=\"M9 18h6M10 21h4\"/><path d=\"M12 3a6 6 0 0 0-4 10.5c.7.7 1 1.5 1 2.5h6c0-1 .3-1.8 1-2.5A6 6 0 0 0 12 3z\"/>", "wallet": "<rect x=\"3\" y=\"6\" width=\"18\" height=\"13\" rx=\"2\"/><path d=\"M3 10h18M16 14h2\"/>", "chart": "<path d=\"M3 3v18h18\"/><path d=\"m7 15 4-4 3 3 5-6\"/>", "file": "<path d=\"M14 3H6a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V9z\"/><path d=\"M14 3v6h6\"/>", "calendar": "<rect x=\"3\" y=\"5\" width=\"18\" height=\"16\" rx=\"2\"/><path d=\"M3 10h18M8 3v4M16 3v4\"/>", "flask": "<path d=\"M9 3h6M10 3v6L4 20a1 1 0 0 0 1 1h14a1 1 0 0 0 1-1L14 9V3\"/>", "cap": "<path d=\"M2 10 12 5l10 5-10 5z\"/><path d=\"M6 12v5c3 2 9 2 12 0v-5\"/>"};
 function I(n,cls){return '<svg class="'+(cls||'ic')+'" viewBox="0 0 24 24" aria-hidden="true">'+(ICONS[n]||'')+'</svg>';}
+
 // ══════════════════════════════════════════════
-//  CONFIG
+//  CONFIG — GAS URL โหลดจาก localStorage
+//  ตั้งค่าผ่านหน้า "ตั้งค่าระบบ" (ไอคอนเฟือง)
 // ══════════════════════════════════════════════
-var GAS_URL   = 'https://script.google.com/macros/s/AKfycbzTMJzJdldifZ22pLpyhfIMzhp5wBu09esjKhOr_rFkIHfya1n7MRsfm83tHCmzso-C/exec';   // ← ใส่ URL Google Apps Script หลัง Deploy
+var GAS_URL_KEY = 'culac_gas_url';
+var GAS_URL = (function(){
+  try { return localStorage.getItem(GAS_URL_KEY) || ''; } catch(e){ return ''; }
+})();
 var PASSWORDS = { '1234':'developer', '9236':'viewer' };
 var CFG = {
   w:{ lsKey:'culac_waiver_v13',  oldKey:'culac_waiver',  budgetLabel:'วงเงินลดหย่อนที่อนุมัติ', usedLabel:'ใช้สิทธิ์ลดหย่อน', remainLabel:'คงเหลือลดหย่อน',     txLabel:'ลดหย่อน/ยกเว้น',  label:'ลดหย่อน/ยกเว้นค่าใช้จ่าย' },
@@ -552,7 +575,9 @@ var CFG = {
 var S    = { w:{list:[],nid:1}, a:{list:[],nid:1} };
 var role = null;
 
-// ── ข้อมูลเริ่มต้น: นำเข้าจากไฟล์ Excel ล่าสุด (28 ต.ค. 2569) ──
+// ══════════════════════════════════════════════
+//  DEMO DATA (จากไฟล์ Excel ล่าสุด)
+// ══════════════════════════════════════════════
 var DEMO = {"w": [{"id": 1, "code": "2473014", "name": "ความเป็นพิษแบบเฉียบพลันและฤทธิ์ของ plant produced anti-human IL-6 receptor antibody ในการยับยั้งการเจริญเติบโตของมะเร็งปอด", "responsible": "ผู้ช่วยศาสตราจารย์ สัตวแพทย์หญิง ดร. วุฒิพร ลิ้มประสูตร", "student": "น.สพ.วีรยุทธ ยิ่งมีมา", "budget": 127777, "status": "ดำเนินการ", "approvedDate": "", "receipts": [], "transactions": [{"type": "inv", "date": "2024-08-31", "invNo": "IV0001921", "invAmt": 13150, "srNo": "", "srAmt": 13150, "biNo": "", "netAmt": 0, "note": ""}, {"type": "inv", "date": "2024-09-30", "invNo": "IV0001951", "invAmt": 21025, "srNo": "", "srAmt": 21025, "biNo": "", "netAmt": 0, "note": ""}, {"type": "inv", "date": "2024-10-22", "invNo": "IV0001972", "invAmt": 230, "srNo": "", "srAmt": 230, "biNo": "", "netAmt": 0, "note": ""}, {"type": "inv", "date": "2024-11-30", "invNo": "IV0001999", "invAmt": 21175, "srNo": "", "srAmt": 21175, "biNo": "", "netAmt": 0, "note": ""}, {"type": "inv", "date": "2024-11-30", "invNo": "IV0002000", "invAmt": 920, "srNo": "", "srAmt": 920, "biNo": "", "netAmt": 0, "note": ""}, {"type": "inv", "date": "2024-12-31", "invNo": "IV0002016", "invAmt": 20115, "srNo": "", "srAmt": 20115, "biNo": "", "netAmt": 0, "note": ""}, {"type": "inv", "date": "2025-01-31", "invNo": "IV0002037", "invAmt": 5870, "srNo": "", "srAmt": 5870, "biNo": "", "netAmt": 0, "note": ""}, {"type": "inv", "date": "2025-03-04", "invNo": "IV0002057", "invAmt": 57466.58, "srNo": "", "srAmt": 0, "biNo": "", "netAmt": 57466.58, "note": ""}, {"type": "inv", "date": "2025-03-04", "invNo": "IV0002058", "invAmt": 12250, "srNo": "", "srAmt": 0, "biNo": "", "netAmt": 12250, "note": ""}, {"type": "inv", "date": "2025-03-04", "invNo": "IV0002059", "invAmt": 10281.42, "srNo": "", "srAmt": 0, "biNo": "", "netAmt": 10281.42, "note": ""}, {"type": "inv", "date": "2025-03-04", "invNo": "IV0002060", "invAmt": 4050, "srNo": "", "srAmt": 4050, "biNo": "", "netAmt": 0, "note": ""}, {"type": "inv", "date": "2025-03-04", "invNo": "IV0002061", "invAmt": 18850, "srNo": "", "srAmt": 18850, "biNo": "", "netAmt": 0, "note": ""}, {"type": "inv", "date": "2025-02-28", "invNo": "IV0002071", "invAmt": 9058, "srNo": "", "srAmt": 960, "biNo": "", "netAmt": 8098, "note": ""}, {"type": "inv", "date": "2025-04-30", "invNo": "IV0002109", "invAmt": 85931, "srNo": "", "srAmt": 5585, "biNo": "", "netAmt": 80346, "note": ""}, {"type": "inv", "date": "2025-11-30", "invNo": "IV0002304", "invAmt": 960, "srNo": "", "srAmt": 960, "biNo": "", "netAmt": 0, "note": ""}]}, {"id": 2, "code": "2473027", "name": "การส่งไมโครอาร์เอ็นเอด้วยอนุภาคนาโนไฮดรอกซีอะพาไทต์ช่วยกระตุ้นการสร้างเนื้อฟ้นและปรับปรุงการตอบสนอง ของระบบภูมิคุ้มกันในเนื้อเยื่อโพรงประสาท", "responsible": "รศ.ทพ.ญ.ดร.อัญชลี วัชรักษะ", "student": "Mr.Cuong Manh Hoang", "budget": 169740.5, "status": "ดำเนินการ", "approvedDate": "2024-11-13", "receipts": [], "transactions": [{"type": "inv", "date": "2025-10-10", "invNo": "IV0002243", "invAmt": 47609, "srNo": "SR0000388", "srAmt": 19179, "biNo": "BI0001650", "netAmt": 28430, "note": ""}, {"type": "inv", "date": "2025-11-12", "invNo": "IV0002263", "invAmt": 4544, "srNo": "SR0000389", "srAmt": 4544, "biNo": "BI0001668", "netAmt": 0, "note": ""}, {"type": "inv", "date": "2025-11-30", "invNo": "IV0002290", "invAmt": 4452, "srNo": "SR0000391", "srAmt": 4452, "biNo": "BI0001710", "netAmt": 0, "note": ""}, {"type": "inv", "date": "2025-12-31", "invNo": "IV0002316", "invAmt": 8116, "srNo": "SR0000393", "srAmt": 5886, "biNo": "BI0001736", "netAmt": 2230, "note": ""}]}, {"id": 3, "code": "2573010", "name": "ผลของการให้พิโมเบนแดนเข้าทางหลอดเลือดดำต่อการทำงานของกล้ามเนื้อหัวใจในสุนัขที่มีสุขภาพดี", "responsible": "รศ.น.สพ.ดร.อนุศักดิ์ กิจถาวรรัตน์", "student": "Mr. Vinh Huuu Le", "budget": 150000, "status": "ดำเนินการ", "approvedDate": "2025-07-21", "receipts": [], "transactions": [{"type": "inv", "date": "2025-07-31", "invNo": "IV0002188", "invAmt": 69041, "srNo": "SR0000381", "srAmt": 42350, "biNo": "BI0001604", "netAmt": 26691, "note": ""}]}, {"id": 4, "code": "2573020", "name": "ผลของตำรับสำราญนิทราต่อพฤติกรรมคล้ายวิตกกังวลในหนูแรทเพศเมียที่ถูกตัดรังไข่", "responsible": "รศ.สพ.ญ.ดร.สฤณี กลันทกานนท์ ทองทรง", "student": "Ms Karina Retnyssa Harviany Gunawan", "budget": 150000, "status": "ดำเนินการ", "approvedDate": "2025-09-15", "receipts": [], "transactions": [{"type": "inv", "date": "2025-09-30", "invNo": "IV0002245", "invAmt": 107479, "srNo": "SR0000386", "srAmt": 43042, "biNo": "BI0001652", "netAmt": 64437, "note": ""}, {"type": "inv", "date": "2025-10-30", "invNo": "IV0002266", "invAmt": 62224, "srNo": "SR0000387", "srAmt": 58956, "biNo": "BI0001653", "netAmt": 3268, "note": ""}, {"type": "inv", "date": "2025-11-30", "invNo": "IV0002299", "invAmt": 26552, "srNo": "SR0000390", "srAmt": 26302, "biNo": "BI0001709", "netAmt": 250, "note": ""}, {"type": "inv", "date": "2025-12-31", "invNo": "IV0002318", "invAmt": 6384, "srNo": "SR0000394", "srAmt": 6384, "biNo": "BI0001737", "netAmt": 0, "note": ""}]}, {"id": 5, "code": "2573036", "name": "การศึกษาความไวต่อการติดเชื้อราแคนดิดาอัลบิแคนส์ใน หนูทดลองที่มีการกลายพันธุ์ของยีน Stat3", "responsible": "ศาสตราจารย์ดร.พ.ญ.ณัฏฐิยา หิรัญกาญจน์", "student": "นางสาวอภิชญา ศรีวะรมย์", "budget": 190925, "status": "ดำเนินการ", "approvedDate": "2025-09-15", "receipts": [], "transactions": [{"type": "inv", "date": "2025-03-31", "invNo": "IV0002394", "invAmt": 1475, "srNo": "SR0000403", "srAmt": 1475, "biNo": "BI0001796", "netAmt": 0, "note": ""}, {"type": "inv", "date": "2026-04-30", "invNo": "IV0002401", "invAmt": 8360, "srNo": "SR0000406", "srAmt": 8360, "biNo": "BI0001815", "netAmt": 0, "note": ""}, {"type": "inv", "date": "2026-05-29", "invNo": "IV0002422", "invAmt": 14605, "srNo": "", "srAmt": 14605, "biNo": "", "netAmt": 0, "note": ""}, {"type": "inv", "date": "2026-06-30", "invNo": "IV0002441", "invAmt": 16260, "srNo": "SR0000412", "srAmt": 15720, "biNo": "BI0001857", "netAmt": 540, "note": ""}, {"type": "adj", "date": "2026-06-30", "invNo": "", "invAmt": 0, "srNo": "", "srAmt": -15720, "biNo": "", "netAmt": 0, "note": "โอนมาเกิน บวกกลับ = 15,720.00"}, {"type": "inv", "date": "2026-07-31", "invNo": "IV0002458", "invAmt": 17300, "srNo": "SR0000417", "srAmt": 17300, "biNo": "BI0001871", "netAmt": 0, "note": ""}, {"type": "inv", "date": "2026-07-31", "invNo": "IV0002479", "invAmt": 17495, "srNo": "SR0000418", "srAmt": 17195, "biNo": "BI0001877", "netAmt": 300, "note": ""}]}, {"id": 6, "code": "2573034", "name": "การเปลี่ยนแปลงของระบบประสาทกาบาในพาราเวนทริคูลานิวเคลียสของไฮโปธาลามัสในหนูแรทตัวแบบ ที่มีภาวะลิ้นหัวใจไมทรัลรั่ว", "responsible": "รศ.สพ.ญ.ดร.สฤณี กลันทกานนท์ ทองทรง", "student": "Ms Le Thi Anh Thu", "budget": 300000, "status": "ดำเนินการ", "approvedDate": "2025-11-28", "receipts": [], "transactions": [{"type": "inv", "date": "2025-12-12", "invNo": "IV0002302", "invAmt": 75098, "srNo": "SR0000396", "srAmt": 55450, "biNo": "BI0001706", "netAmt": 19648, "note": ""}, {"type": "inv", "date": "2026-01-13", "invNo": "IV0002319", "invAmt": 132393, "srNo": "SR0000395", "srAmt": 122048, "biNo": "BI0001727", "netAmt": 10345, "note": ""}, {"type": "inv", "date": "2026-01-31", "invNo": "IV0002347", "invAmt": 135452, "srNo": "SR0000397", "srAmt": 122502, "biNo": "BI0001757", "netAmt": 12950, "note": ""}]}], "a": [{"id": 1, "code": "2173044", "name": "เงินรับล่วงหน้า 2173044", "responsible": "ศ.ดร.ธนาภัทร ปาลกะ", "student": "", "budget": 10000, "status": "ดำเนินการ", "approvedDate": "2025-02-04", "receipts": [{"date": "2025-02-04", "amount": 10000, "ref": ""}], "transactions": [{"type": "inv", "date": "2025-02-13", "invNo": "IV0002031", "invAmt": 440, "srNo": "SR0000348", "srAmt": 440, "biNo": "BI0001460", "netAmt": 0, "note": ""}, {"type": "inv", "date": "2025-02-28", "invNo": "IV0002064", "invAmt": 1540, "srNo": "SR0000355", "srAmt": 1540, "biNo": "BI0001485", "netAmt": 0, "note": ""}, {"type": "inv", "date": "2025-03-31", "invNo": "IV0002085", "invAmt": 1705, "srNo": "SR0000362", "srAmt": 1705, "biNo": "BI0001526", "netAmt": 0, "note": ""}, {"type": "inv", "date": "2025-04-30", "invNo": "IV0002104", "invAmt": 1650, "srNo": "SR0000367", "srAmt": 1650, "biNo": "BI0001530", "netAmt": 0, "note": ""}, {"type": "inv", "date": "2025-05-30", "invNo": "IV0002125", "invAmt": 360, "srNo": "SR0000371", "srAmt": 360, "biNo": "BI0001548", "netAmt": 0, "note": ""}]}, {"id": 2, "code": "2473006", "name": "เงินรับล่วงหน้า 2473006", "responsible": "รศ.ภญ.ดร.สรกนก วิมลมั่งคั่ง", "student": "", "budget": 494600, "status": "ดำเนินการ", "approvedDate": "2024-08-27", "receipts": [{"date": "2024-08-27", "amount": 494600, "ref": ""}], "transactions": [{"type": "inv", "date": "2024-02-27", "invNo": "IV0001742", "invAmt": 6000, "srNo": "SR0000343", "srAmt": 6000, "biNo": "BI0001226", "netAmt": 0, "note": ""}, {"type": "inv", "date": "2025-02-13", "invNo": "IV0002042", "invAmt": 6235, "srNo": "SR0000350", "srAmt": 6235, "biNo": "BI0001469", "netAmt": 0, "note": ""}, {"type": "inv", "date": "2025-03-31", "invNo": "IV0002092", "invAmt": 46853, "srNo": "SR0000363", "srAmt": 46853, "biNo": "BI0001527", "netAmt": 0, "note": ""}]}, {"id": 3, "code": "2573005, 2573006, 2673001", "name": "เงินรับล่วงหน้า 2573005, 2573006, 2673001", "responsible": "ศ.ดร.ธนาภัทร ปาลกะ", "student": "", "budget": 236190, "status": "ดำเนินการ", "approvedDate": "2025-03-11", "receipts": [{"date": "2025-03-11", "amount": 150000, "ref": ""}, {"date": "2026-06-25", "amount": 86190, "ref": "1290200247"}], "transactions": [{"type": "inv", "date": "2025-02-28", "invNo": "IV0002362", "invAmt": 23465, "srNo": "SR0000398", "srAmt": 23465, "biNo": "", "netAmt": 0, "note": "2573005"}, {"type": "inv", "date": "2025-02-28", "invNo": "IV0002363", "invAmt": 22660, "srNo": "SR0000399", "srAmt": 22660, "biNo": "", "netAmt": 0, "note": "2573006"}, {"type": "inv", "date": "2025-03-31", "invNo": "IV0002381", "invAmt": 24835, "srNo": "SR0000401", "srAmt": 24835, "biNo": "", "netAmt": 0, "note": "2573005"}, {"type": "inv", "date": "2025-03-31", "invNo": "IV0002382", "invAmt": 24020, "srNo": "SR0000402", "srAmt": 24020, "biNo": "", "netAmt": 0, "note": "2573005"}, {"type": "inv", "date": "2026-04-30", "invNo": "IV0002398", "invAmt": 28050, "srNo": "SR0000404", "srAmt": 28050, "biNo": "", "netAmt": 0, "note": "2573005"}, {"type": "inv", "date": "2026-04-30", "invNo": "IV0002399", "invAmt": 24585, "srNo": "SR0000405", "srAmt": 24585, "biNo": "", "netAmt": 0, "note": "2573006"}, {"type": "inv", "date": "2026-07-01", "invNo": "IV0002439", "invAmt": 19225, "srNo": "SR0000409", "srAmt": 19225, "biNo": "", "netAmt": 0, "note": "2573005"}, {"type": "inv", "date": "2026-07-01", "invNo": "IV0002440", "invAmt": 19030, "srNo": "SR0000410", "srAmt": 19030, "biNo": "", "netAmt": 0, "note": "2573006"}, {"type": "inv", "date": "2026-07-01", "invNo": "IV0002445", "invAmt": 11580, "srNo": "SR0000411", "srAmt": 11580, "biNo": "", "netAmt": 0, "note": "2673001"}, {"type": "inv", "date": "2026-07-31", "invNo": "IV0002461", "invAmt": 12185, "srNo": "SR0000419", "srAmt": 12185, "biNo": "", "netAmt": 0, "note": ""}, {"type": "inv", "date": "2026-07-31", "invNo": "IV0002462", "invAmt": 11275, "srNo": "SR000420", "srAmt": 11275, "biNo": "", "netAmt": 0, "note": ""}, {"type": "inv", "date": "2026-07-31", "invNo": "IV0002476", "invAmt": 10815, "srNo": "SR000421", "srAmt": 10815, "biNo": "", "netAmt": 0, "note": ""}, {"type": "inv", "date": "2026-07-31", "invNo": "IV0002477", "invAmt": 3685, "srNo": "SR000422", "srAmt": 3685, "biNo": "", "netAmt": 0, "note": ""}]}, {"id": 4, "code": "2573005", "name": "เงินรับล่วงหน้า 2573005", "responsible": "ศ.ดร.ธนาภัทร ปาลกะ", "student": "", "budget": 60000, "status": "ดำเนินการ", "approvedDate": "2025-07-29", "receipts": [{"date": "2025-07-29", "amount": 60000, "ref": ""}], "transactions": [{"type": "inv", "date": "2025-07-31", "invNo": "IV0002181", "invAmt": 28875, "srNo": "SR0000378", "srAmt": 28875, "biNo": "", "netAmt": 0, "note": ""}, {"type": "inv", "date": "2025-08-31", "invNo": "IV0002209", "invAmt": 27420, "srNo": "SR0000382", "srAmt": 27420, "biNo": "", "netAmt": 0, "note": ""}, {"type": "inv", "date": "2025-09-30", "invNo": "IV0002238", "invAmt": 18520, "srNo": "SR0000384", "srAmt": 3700, "biNo": "BI0001660", "netAmt": 14820, "note": "จ่ายเพิ่ม"}]}, {"id": 5, "code": "2573006", "name": "เงินรับล่วงหน้า 2573006", "responsible": "ศ.ดร.ธนาภัทร ปาลกะ", "student": "", "budget": 60000, "status": "ดำเนินการ", "approvedDate": "2025-07-29", "receipts": [{"date": "2025-07-29", "amount": 60000, "ref": ""}], "transactions": [{"type": "inv", "date": "2025-07-31", "invNo": "IV0002182", "invAmt": 19800, "srNo": "SR0000379", "srAmt": 19800, "biNo": "", "netAmt": 0, "note": ""}, {"type": "inv", "date": "2025-08-31", "invNo": "IV0002209", "invAmt": 24585, "srNo": "SR0000383", "srAmt": 24585, "biNo": "", "netAmt": 0, "note": ""}, {"type": "inv", "date": "2025-09-30", "invNo": "IV0002239", "invAmt": 24340, "srNo": "SR0000385", "srAmt": 15600, "biNo": "BI0001661", "netAmt": 8740, "note": "จ่ายเพิ่ม"}]}, {"id": 6, "code": "2173012", "name": "เงินรับล่วงหน้า 2173012", "responsible": "ศ.ดร.ธนาภัทร ปาลกะ", "student": "", "budget": 40000, "status": "ดำเนินการ", "approvedDate": "2025-02-04", "receipts": [{"date": "2025-02-04", "amount": 40000, "ref": "1290200086"}], "transactions": [{"type": "inv", "date": "2025-01-31", "invNo": "IV0002028", "invAmt": 22740, "srNo": "SR0000346", "srAmt": 22740, "biNo": "BI0001478", "netAmt": 0, "note": ""}, {"type": "inv", "date": "2025-02-28", "invNo": "IV0002062", "invAmt": 17260, "srNo": "SR0000358", "srAmt": 17260, "biNo": "BI0001483", "netAmt": 0, "note": ""}]}, {"id": 7, "code": "2173013", "name": "เงินรับล่วงหน้า 2173013", "responsible": "ศ.ดร.ธนาภัทร ปาลกะ", "student": "", "budget": 40000, "status": "ดำเนินการ", "approvedDate": "2025-02-04", "receipts": [{"date": "2025-02-04", "amount": 40000, "ref": ""}], "transactions": [{"type": "inv", "date": "2025-02-13", "invNo": "IV0002030", "invAmt": 26260, "srNo": "SR0000349", "srAmt": 26260, "biNo": "BI0001459", "netAmt": 0, "note": ""}, {"type": "inv", "date": "2025-02-28", "invNo": "IV0002063", "invAmt": 13740, "srNo": "SR0000354", "srAmt": 13740, "biNo": "BI0001484", "netAmt": 0, "note": ""}]}, {"id": 8, "code": "2373004", "name": "เงินรับล่วงหน้า 2373004", "responsible": "ศ.ดร.ธนาภัทร ปาลกะ", "student": "", "budget": 5000, "status": "ดำเนินการ", "approvedDate": "2025-02-04", "receipts": [{"date": "2025-02-04", "amount": 5000, "ref": ""}], "transactions": [{"type": "inv", "date": "2025-02-28", "invNo": "IV0002068", "invAmt": 2000, "srNo": "SR0000360", "srAmt": 2000, "biNo": "BI0001493", "netAmt": 0, "note": ""}, {"type": "inv", "date": "2025-03-31", "invNo": "IV0002090", "invAmt": 1465, "srNo": "", "srAmt": 1465, "biNo": "", "netAmt": 0, "note": ""}, {"type": "inv", "date": "2025-06-30", "invNo": "IV0002146", "invAmt": 2670, "srNo": "SR0000373", "srAmt": 1535, "biNo": "BI0001576", "netAmt": 1135, "note": ""}]}, {"id": 9, "code": "2373047", "name": "เงินรับล่วงหน้า 2373047", "responsible": "สพ.ญ.ดร.อัญญรัตน์ ตันธีรวงศ์", "student": "", "budget": 250000, "status": "ดำเนินการ", "approvedDate": "", "receipts": [{"date": "2023-12-26", "amount": 250000, "ref": "IV0001635"}], "transactions": [{"type": "inv", "date": "2024-05-31", "invNo": "IV0001867", "invAmt": 62920, "srNo": "SR0000330", "srAmt": 62920, "biNo": "BI0001365", "netAmt": 0, "note": ""}, {"type": "inv", "date": "2024-07-12", "invNo": "IV0001885", "invAmt": 32600, "srNo": "SR0000326", "srAmt": 32600, "biNo": "BI0001346", "netAmt": 0, "note": ""}, {"type": "inv", "date": "2024-07-12", "invNo": "IV0001887", "invAmt": 18325, "srNo": "SR0000327", "srAmt": 18325, "biNo": "BI0001346", "netAmt": 0, "note": ""}, {"type": "inv", "date": "2024-07-12", "invNo": "IV0001890", "invAmt": 16302, "srNo": "SR0000328", "srAmt": 16302, "biNo": "BI0001346", "netAmt": 0, "note": ""}, {"type": "inv", "date": "2024-08-09", "invNo": "IV0001907", "invAmt": 54167.5, "srNo": "SR0000329", "srAmt": 54167.5, "biNo": "BI0001362", "netAmt": 0, "note": ""}, {"type": "inv", "date": "2024-09-06", "invNo": "IV0001932", "invAmt": 22964.5, "srNo": "SR0000331", "srAmt": 22964.5, "biNo": "BI0001386", "netAmt": 0, "note": ""}, {"type": "inv", "date": "2024-09-06", "invNo": "IV0001938", "invAmt": 34066.5, "srNo": "SR0000332", "srAmt": 34066.5, "biNo": "BI0001386", "netAmt": 0, "note": ""}, {"type": "inv", "date": "2024-09-06", "invNo": "IV0001939", "invAmt": 43200, "srNo": "SR0000333", "srAmt": 8654.5, "biNo": "BI0001386", "netAmt": 34545.5, "note": ""}]}, {"id": 10, "code": "2473012", "name": "เงินรับล่วงหน้า 2473012", "responsible": "ศ.ดร.ธนาภัทร ปาลกะ", "student": "", "budget": 5000, "status": "ดำเนินการ", "approvedDate": "2025-02-04", "receipts": [{"date": "2025-02-04", "amount": 5000, "ref": ""}], "transactions": [{"type": "inv", "date": "2025-02-13", "invNo": "IV0002036", "invAmt": 1305, "srNo": "SR0000347", "srAmt": 1305, "biNo": "BI0001465", "netAmt": 0, "note": ""}, {"type": "inv", "date": "2025-02-28", "invNo": "IV0002070", "invAmt": 3695, "srNo": "SR0000356", "srAmt": 3695, "biNo": "BI0001487", "netAmt": 0, "note": ""}]}, {"id": 11, "code": "2373032", "name": "เงินรับล่วงหน้า 2373032", "responsible": "ทพ.วิริทธิ์พล ศรีมณีพงศ์ หัวหน้าโครงการวิจัย ผศ.สพ.ญ.ดร.วุฒิพร ลิ้มประสูตร", "student": "", "budget": 300000, "status": "ดำเนินการ", "approvedDate": "", "receipts": [{"date": "2023-07-25", "amount": 75000, "ref": "IV0001509"}, {"date": "2023-07-25", "amount": 75000, "ref": "IV0001510"}, {"date": "2023-07-25", "amount": 75000, "ref": "IV0001511"}, {"date": "2023-07-25", "amount": 75000, "ref": "IV0001512"}], "transactions": [{"type": "inv", "date": "2025-02-28", "invNo": "IV0002079", "invAmt": 10560, "srNo": "SR0000357", "srAmt": 10560, "biNo": "BI0001486", "netAmt": 0, "note": ""}, {"type": "inv", "date": "2025-03-31", "invNo": "IV0002102", "invAmt": 40071, "srNo": "SR0000364", "srAmt": 40071, "biNo": "BI0001528", "netAmt": 0, "note": ""}, {"type": "inv", "date": "2025-04-30", "invNo": "IV0002121", "invAmt": 9900, "srNo": "SR0000365", "srAmt": 9900, "biNo": "BI0001545", "netAmt": 0, "note": ""}, {"type": "inv", "date": "2025-05-30", "invNo": "IV0002139", "invAmt": 10230, "srNo": "SR0000372", "srAmt": 10230, "biNo": "BI0001562", "netAmt": 0, "note": ""}, {"type": "inv", "date": "2025-06-30", "invNo": "IV0002160", "invAmt": 9900, "srNo": "SR0000374", "srAmt": 9900, "biNo": "BI0001577", "netAmt": 0, "note": ""}, {"type": "inv", "date": "2025-07-31", "invNo": "IV0002185", "invAmt": 219339, "srNo": "SR0000380", "srAmt": 219339, "biNo": "BI0001601", "netAmt": 0, "note": ""}]}]};
 
 // ══════════════════════════════════════════════
@@ -566,24 +591,20 @@ function D(s){
   var m=['ม.ค.','ก.พ.','มี.ค.','เม.ย.','พ.ค.','มิ.ย.','ก.ค.','ส.ค.','ก.ย.','ต.ค.','พ.ย.','ธ.ค.'];
   return d.getDate()+' '+m[d.getMonth()]+' '+(d.getFullYear()+543);
 }
-// หลักการ (ตรงกับไฟล์ Excel): วงเงินถูกตัดด้วยยอดใบลดหนี้ SR ทั้งสองระบบ
-//   ใช้ไป = Σ SR (รายการปรับปรุงบวกกลับเป็นค่าติดลบ) · เรียกเก็บ (BI) = IV − SR
 function used(p){ return p.transactions.reduce(function(s,t){return s+(+t.srAmt||0);},0); }
-function shortName(s){   // ย่อคำนำหน้าทางวิชาการ แล้วแสดงคำนำหน้า+ชื่อ
+function shortName(s){
   s=String(s||'').replace(/ผู้ช่วยศาสตราจารย์/g,'ผศ.').replace(/รองศาสตราจารย์/g,'รศ.').replace(/ศาสตราจารย์/g,'ศ.')
     .replace(/สัตวแพทย์หญิง/g,'สพ.ญ.').replace(/สัตวแพทย์/g,'น.สพ.').replace(/\.\s+/g,'.').trim();
   return s.split(' ')[0];
 }
 function billed(p){ return p.transactions.reduce(function(s,t){return s+(+t.netAmt||0);},0); }
-// netAmt = ยอดเรียกเก็บ (BI) = IV − SR ทั้งสองระบบ
-// ปรับข้อมูลรุ่นเก่า (v12 / Sheets เดิม) ให้ตรงหลักการใหม่
 function normalizeList(list){
   (list||[]).forEach(function(p){
     p.budget=+p.budget||0; if(!Array.isArray(p.receipts)) p.receipts=[];
     ['code','name','responsible','student','approvedDate'].forEach(function(k){ p[k]=p[k]==null?'':String(p[k]); });
     p.status=p.status||'ดำเนินการ';
     (p.transactions||(p.transactions=[])).forEach(function(x){
-      var legacy=!x.type;                       // ข้อมูลก่อน v13 ไม่มีฟิลด์ type
+      var legacy=!x.type;
       x.type=x.type||'inv'; x.note=x.note||'';
       x.invAmt=+x.invAmt||0; x.srAmt=+x.srAmt||0; x.netAmt=+x.netAmt||0;
       if(x.type==='adj') x.netAmt=0; else if(legacy) x.netAmt=Math.max(0,x.invAmt-x.srAmt);
@@ -591,7 +612,7 @@ function normalizeList(list){
   });
   return list;
 }
-function calcNetByTab(t,iv,sr){ return Math.max(0,(iv||0)-(sr||0)); }   // ยอดเรียกเก็บ (BI)
+function calcNetByTab(t,iv,sr){ return Math.max(0,(iv||0)-(sr||0)); }
 function maxId(a){ return a.length?Math.max.apply(null,a.map(function(x){return x.id;})):0; }
 
 function ld(show,txt){
@@ -599,18 +620,29 @@ function ld(show,txt){
   g('ld-overlay').classList.toggle('show',!!show);
 }
 function setConn(type,html){
-  var e=g('conn-chip'); e.className='conn-chip '+type; e.innerHTML=html;
+  var e=g('conn-chip'); if(!e) return;
+  e.className='conn-chip '+type;
+  e.innerHTML=html;
+  // คลิกได้ถ้าออฟไลน์/ผิดพลาด → เปิดตั้งค่า
+  if(type==='c-off'||type==='c-err'){
+    e.classList.add('clickable');
+    e.title='คลิกเพื่อตั้งค่าการเชื่อมต่อ';
+    e.onclick=openSettingsModal;
+  } else {
+    e.classList.remove('clickable');
+    e.title='';
+    e.onclick=null;
+  }
 }
 function closeModal(id){
   var el=g(id); if(el) el.classList.remove('show');
 }
 window.onclick=function(e){
-  ['login-modal','proj-modal','tx-modal'].forEach(function(id){
+  ['login-modal','proj-modal','tx-modal','settings-modal'].forEach(function(id){
     if(e.target.id===id) closeModal(id);
   });
 };
 
-// ── TOAST ──
 function toast(msg, type, duration){
   type=type||'ok'; duration=duration||3200;
   var icons={ok:I('check'),err:I('x'),warn:I('alert'),info:I('info')};
@@ -622,6 +654,80 @@ function toast(msg, type, duration){
     el.classList.add('out');
     setTimeout(function(){if(el.parentNode)el.parentNode.removeChild(el);},280);
   },duration);
+}
+
+// ══════════════════════════════════════════════
+//  SETTINGS (GAS URL)
+// ══════════════════════════════════════════════
+function openSettingsModal(){
+  var inp=g('set-gas-url');
+  inp.value = GAS_URL || '';
+  var res=g('set-test-result');
+  res.className='test-result';
+  res.innerHTML='';
+  g('settings-modal').classList.add('show');
+  setTimeout(function(){inp.focus();inp.select&&inp.select();},200);
+}
+function testGasConnection(){
+  var url=g('set-gas-url').value.trim();
+  var res=g('set-test-result');
+  res.className='test-result show test-info';
+  if(!url){ res.className='test-result show test-err'; res.textContent='กรุณากรอก URL ก่อนทดสอบ'; return; }
+  if(!/^https:\/\/script\.google\.com\//.test(url)){
+    res.className='test-result show test-err';
+    res.textContent='URL ต้องเริ่มต้นด้วย https://script.google.com/ และลงท้ายด้วย /exec';
+    return;
+  }
+  res.textContent='กำลังทดสอบ...';
+  fetch(url+(url.indexOf('?')>=0?'&':'?')+'action=getProjects&tab=w&_='+Date.now())
+    .then(function(r){ return r.json(); })
+    .then(function(d){
+      if(d && d.success){
+        var n=(d.projects||[]).length;
+        res.className='test-result show test-ok';
+        res.textContent='✓ เชื่อมต่อสำเร็จ — พบ '+n+' โครงการ';
+      } else {
+        res.className='test-result show test-err';
+        res.textContent='ตอบกลับไม่ถูกต้อง: '+((d&&d.message)||'ไม่ทราบสาเหตุ');
+      }
+    })
+    .catch(function(err){
+      res.className='test-result show test-err';
+      res.textContent='เชื่อมต่อไม่สำเร็จ: '+err.message;
+    });
+}
+function saveSettings(){
+  var url=g('set-gas-url').value.trim();
+  if(url && !/^https:\/\/script\.google\.com\//.test(url)){
+    toast('URL ต้องเริ่มต้นด้วย https://script.google.com/','warn');
+    return;
+  }
+  var changed = (url !== GAS_URL);
+  GAS_URL = url;
+  try{
+    if(url) localStorage.setItem(GAS_URL_KEY, url);
+    else localStorage.removeItem(GAS_URL_KEY);
+  }catch(e){ toast('บันทึกค่าลงเบราว์เซอร์ไม่สำเร็จ','err'); }
+  closeModal('settings-modal');
+  if(!url){
+    setConn('c-off','ออฟไลน์');
+    toast('ล้างค่าแล้ว — โหมดออฟไลน์','info');
+    return;
+  }
+  toast('บันทึกการตั้งค่าแล้ว','ok');
+  fetchPasswords();
+  if(changed){
+    // โหลดใหม่ทั้งสองแท็บ
+    S.w.list=[]; S.a.list=[];
+    doSync('w',false); doSync('a',false);
+  }
+}
+function clearGasUrl(){
+  if(!confirm('ล้าง URL และสลับเป็นโหมดออฟไลน์?')) return;
+  g('set-gas-url').value='';
+  var res=g('set-test-result');
+  res.className='test-result';
+  res.innerHTML='';
 }
 
 // ══════════════════════════════════════════════
@@ -637,13 +743,12 @@ function switchTab(t){
 function showList(t){
   var pane=g('pane-'+t);
   var tb=pane.querySelector('.toolbar'); if(tb) tb.style.display='';
-  var ov=g('overall-'+t); if(ov) ov.style.display='block';   // suggest/closed จะถูก renderList จัดการเอง
+  var ov=g('overall-'+t); if(ov) ov.style.display='block';
   g('sum-'+t).style.display='grid';
   g('listcard-'+t).style.display='block';
   var dp=g('detail-'+t);
   dp.style.display='none';
   dp.innerHTML='';
-  // ลบ sticky bar ถ้ามี
   var sb=document.getElementById('sticky-back-'+t);
   if(sb) sb.parentNode.removeChild(sb);
 }
@@ -684,7 +789,7 @@ function refreshUI(){
   });
   var rc=g('role-chip');
   var lb=g('login-btn');
-  if(!role)    { rc.className='role-chip chip-lock'; rc.innerHTML=I('lock')+' อ่านอย่างเดียว'; lb.innerHTML=I('user')+' เข้าสู่ระบบ'; }
+  if(!role)    { rc.className='role-chip chip-lock'; rc.innerHTML=I('lock')+' อ่านอย่างเดียว'; lb.innerHTML=I('user')+' เข้าสู่ระบบ'; lb.onclick=openLoginModal; }
   else if(dev) { rc.className='role-chip chip-dev';  rc.innerHTML=I('unlock')+' ผู้พัฒนา'; lb.innerHTML=I('user')+' ออกจากระบบ'; lb.onclick=doLogout; }
   else         { rc.className='role-chip chip-view'; rc.innerHTML=I('eye')+' ผู้ใช้งาน'; lb.innerHTML=I('user')+' ออกจากระบบ'; lb.onclick=doLogout; }
   renderList('w'); renderList('a');
@@ -697,7 +802,7 @@ function doLogout(){
 }
 function fetchPasswords(){
   if(!GAS_URL) return;
-  fetch(GAS_URL+'?action=getPasswords')
+  fetch(GAS_URL+(GAS_URL.indexOf('?')>=0?'&':'?')+'action=getPasswords')
     .then(function(r){return r.json();})
     .then(function(d){ if(d.success&&d.passwords) PASSWORDS=d.passwords; })
     .catch(function(){});
@@ -711,7 +816,7 @@ function doSync(t, manual){
   if(!GAS_URL){ setConn('c-off','ออฟไลน์'); loadLocal(t); return; }
   setConn('c-ld','กำลังซิงค์');
   if(manual) ld(true,'กำลังซิงค์ข้อมูล...');
-  fetch(GAS_URL+'?action=getProjects&tab='+t)
+  fetch(GAS_URL+(GAS_URL.indexOf('?')>=0?'&':'?')+'action=getProjects&tab='+t)
     .then(function(r){return r.json();})
     .then(function(d){
       ld(false);
@@ -735,7 +840,6 @@ function loadLocal(t){
   S[t].nid=maxId(S[t].list)+1;
   render(t);
 }
-// เปิด v13 ครั้งแรก: ใช้ข้อมูล Excel ล่าสุด แล้วนำสถานะ (ปิดแล้ว) และโครงการที่เพิ่มเองจากรุ่นก่อนมารวม
 function migrateOld(t,base){
   var old=null; try{ old=JSON.parse(localStorage.getItem(CFG[t].oldKey)||'null'); }catch(e){}
   if(!Array.isArray(old)) return base;
@@ -749,7 +853,7 @@ function migrateOld(t,base){
 }
 function saveLocal(t){
   localStorage.setItem(CFG[t].lsKey,JSON.stringify(S[t].list));
-  markDirty(t); // มีการเปลี่ยนแปลงที่ยังไม่ sync ขึ้น Sheets
+  markDirty(t);
 }
 function pushToSheet(t){
   saveLocal(t);
@@ -763,7 +867,6 @@ function pushToSheet(t){
     .catch(function(){return false;});
 }
 
-// ── Dirty state: ติดตามว่ามีข้อมูลที่ยังไม่ได้บันทึกขึ้น Sheets ──
 var dirty = { w:false, a:false };
 function markDirty(t){
   dirty[t]=true;
@@ -776,13 +879,11 @@ function markClean(t){
   if(btn){ btn.classList.remove('dirty'); btn.innerHTML=I('save')+' บันทึกงาน'; }
 }
 
-// ── ปุ่มบันทึกงาน: sync ขึ้น Sheets ทันที ──
 function saveWork(t){
   if(role!=='developer'){ toast('ต้องเข้าสู่ระบบในฐานะผู้พัฒนา','warn'); return; }
   if(!GAS_URL){
-    // ไม่มี GAS → บันทึกในเครื่องอย่างเดียว
     saveLocal(t); markClean(t);
-    toast('บันทึกในเครื่องแล้ว (ยังไม่ได้เชื่อม Google Sheets)','warn');
+    toast('บันทึกในเครื่องแล้ว (ยังไม่ได้ตั้งค่า Google Sheets)','warn');
     return;
   }
   ld(true,'กำลังบันทึกงานขึ้น Google Sheets...');
@@ -793,12 +894,8 @@ function saveWork(t){
   });
 }
 
-// เตือนก่อนปิดหน้าถ้ายังมีงานไม่ได้บันทึก
 window.addEventListener('beforeunload', function(e){
-  if(dirty.w||dirty.a){
-    e.preventDefault();
-    e.returnValue='';
-  }
+  if(dirty.w||dirty.a){ e.preventDefault(); e.returnValue=''; }
 });
 
 // ══════════════════════════════════════════════
@@ -823,7 +920,6 @@ function renderSummary(t){
     scard('','กำลังดำเนินการ',ps.length-cp,'accent-navy')+
     scard('','ปิดแล้ว',cp);
 
-  // แถบสรุปภาพรวมงบประมาณ
   var ob=g('overall-'+t);
   if(ob){
     ob.innerHTML=
@@ -832,9 +928,7 @@ function renderSummary(t){
         '<span style="font-size:13px;color:var(--ink-2);" class="num">ใช้ไป <b style="color:'+pcolor+';">'+N(tu)+'</b> จาก '+N(tb)+' บาท (<b style="color:'+pcolor+';">'+overallPct.toFixed(1)+'%</b>)</span>'+
       '</div>'+
       '<div style="background:var(--line);border-radius:2px;height:8px;overflow:hidden;">'+
-        '<div style="height:8px;border-radius:2px;width:'+Math.min(overallPct,100)+'%;background:'+pcolor+';transition:width .6s;display:flex;align-items:center;justify-content:flex-end;padding-right:6px;">'+
-        
-        '</div>'+
+        '<div style="height:8px;border-radius:2px;width:'+Math.min(overallPct,100)+'%;background:'+pcolor+';transition:width .6s;"></div>'+
       '</div>';
   }
 }
@@ -861,11 +955,9 @@ function renderList(t){
     return a.code.localeCompare(b.code);
   };
 
-  // แยก 2 กลุ่ม: ดำเนินการ / ปิดแล้ว (เสร็จสิ้น)
   var active = S[t].list.filter(function(p){ return matchKw(p) && p.status!=='เสร็จสิ้น'; }).sort(sorter);
   var closed = S[t].list.filter(function(p){ return matchKw(p) && p.status==='เสร็จสิ้น'; }).sort(sorter);
 
-  // ตารางหลัก: ตามตัวกรอง (ค่าเริ่มต้น = ดำเนินการ)
   var main = sf==='all' ? active.concat(closed) : (sf==='เสร็จสิ้น' ? closed : active);
   g('listcnt-'+t).textContent='('+main.length+' รายการ)';
 
@@ -881,7 +973,6 @@ function renderList(t){
     tb.innerHTML=main.map(function(p){ return rowHTML(t,p,dev); }).join('');
   }
 
-  // หมวดปิดแล้ว (แสดงเฉพาะเมื่อกรอง "ดำเนินการ" และมีโครงการปิด)
   var cc=g('closedcard-'+t);
   if(sf==='ดำเนินการ' && closed.length){
     cc.style.display='block';
@@ -891,7 +982,6 @@ function renderList(t){
     cc.style.display='none';
   }
 
-  // แนะนำปิดโครงการ: คงเหลือ = 0 แต่ยังสถานะดำเนินการ
   renderCloseSuggest(t, active, dev);
 }
 
@@ -919,7 +1009,6 @@ function rowHTML(t,p,dev){
     '</div></td></tr>';
 }
 
-// สลับเปิด/พับ หมวดปิดแล้ว
 function toggleClosed(t){
   var w=g('closedbody-wrap-'+t), a=g('closed-arrow-'+t);
   var open = w.style.display==='none';
@@ -927,7 +1016,6 @@ function toggleClosed(t){
   a.style.transform = open?'rotate(90deg)':'rotate(0deg)';
 }
 
-// เปลี่ยนสถานะโครงการ (ปิด/เปิดใหม่)
 function setStatus(t,id,status){
   if(role!=='developer'){ toast('ต้องเข้าสู่ระบบในฐานะผู้พัฒนา','warn'); return; }
   var p=S[t].list.find(function(x){return x.id===id;}); if(!p) return;
@@ -943,7 +1031,6 @@ function setStatus(t,id,status){
   });
 }
 
-// แถบแนะนำปิดโครงการที่เงินหมด (คงเหลือ ≤ 0 แต่ยังดำเนินการ)
 function renderCloseSuggest(t, active, dev){
   var box=g('suggest-'+t);
   if(!box) return;
@@ -979,7 +1066,6 @@ function viewDetail(t,id){
   var dev=(role==='developer');
   var pc=pct>80?'var(--neg)':(pct>50?'var(--warn)':'var(--navy)');
 
-  // ── Sticky back bar (แทรกใต้ tab-bar) ──
   var oldBar=document.getElementById('sticky-back-'+t);
   if(oldBar) oldBar.parentNode.removeChild(oldBar);
   var stickyBar=document.createElement('div');
@@ -992,7 +1078,6 @@ function viewDetail(t,id){
     '<button class="btn btn-secondary btn-sm" data-t="'+t+'" data-id="'+p.id+'" onclick="doPrint(this.dataset.t,+this.dataset.id)">'+I('print')+' พิมพ์</button>';
   g('pane-'+t).insertBefore(stickyBar, g('pane-'+t).querySelector('.wrap'));
 
-  // ── rows ──
   var hasNote=p.transactions.some(function(x){return x.note;});
   var rows='',run=p.budget;
   p.transactions.forEach(function(tx,i){
@@ -1061,7 +1146,6 @@ function viewDetail(t,id){
         '</tbody></table></div>'+
     '</div></div>';
 
-  // scroll to top
   window.scrollTo({top:0,behavior:'smooth'});
 }
 
@@ -1297,11 +1381,6 @@ function doJsonExport(t){
   a.click(); URL.revokeObjectURL(url);
   toast('สำรองข้อมูลสำเร็จ','ok');
 }
-// ══════════════════════════════════════════════
-//  EXCEL PARSER — 1 ชีต = 1 โครงการ
-//  หลักการ: ยอดที่ตัดวงเงิน = SR (ใบลดหนี้) ทั้งสองระบบ
-//           ยอดเรียกเก็บ (BI) = IV − SR
-// ══════════════════════════════════════════════
 function parseWorkbookCULAC(wb, t, XL) {
   var TH_M = {'ม.ค.':1,'ก.พ.':2,'มี.ค.':3,'เม.ย.':4,'พ.ค.':5,'มิ.ย.':6,'ก.ค.':7,'ส.ค.':8,'ก.ย.':9,'ต.ค.':10,'พ.ย.':11,'ธ.ค.':12};
   var S_ = function (v) { return String(v == null ? '' : v).replace(/\s+/g, ' ').trim(); };
@@ -1339,7 +1418,6 @@ function parseWorkbookCULAC(wb, t, XL) {
     var rows = XL.utils.sheet_to_json(wb.Sheets[sname], { header: 1, defval: null, raw: false });
     if (!rows || rows.length < 4) return;
 
-    // ── ข้อมูลโครงการ (ส่วนหัว) ──
     var code = '', name = '', resp = '', stu = '', budget = 0, approvedDate = '', sheetRemain = null;
     for (var i = 0; i < Math.min(10, rows.length); i++) {
       var r = rows[i] || [], c0 = S_(r[0]);
@@ -1362,7 +1440,6 @@ function parseWorkbookCULAC(wb, t, XL) {
     if (!code) return;
     if (!name) name = (t === 'a' ? 'เงินรับล่วงหน้า ' : 'โครงการ ') + code;
 
-    // ── หัวตาราง ──
     var hRow = -1;
     for (var h = 0; h < rows.length; h++) { if (/^วันที่/.test(S_((rows[h] || [])[0]))) { hRow = h; break; } }
     if (hRow < 0) return;
@@ -1384,21 +1461,20 @@ function parseWorkbookCULAC(wb, t, XL) {
       var r = rows[k] || [];
       var txt = r.map(S_).join(' ');
       if (!txt.trim()) continue;
-      if (/^เลขที่$/.test(S_(r[1])) || /^ใบแจ้ง/.test(S_(r[1]))) continue;      // sub-header
+      if (/^เลขที่$/.test(S_(r[1])) || /^ใบแจ้ง/.test(S_(r[1]))) continue;
       var d = parseDate(r[0]); if (d) lastDate = d;
       var date = d || lastDate;
       var ivc = -1; [1, 2].forEach(function (c) { if (ivc < 0 && /^IV\d/i.test(S_(r[c]))) ivc = c; });
       if (colRun >= 0 && (ivc >= 0 || d) && S_(r[colRun])) runEnd = isNum(r[colRun]) ? num(r[colRun]) : 0;
 
       if (ivc < 0) {
-        // รายการปรับปรุงยอด (เช่น "โอนมาเกิน บวกกลับ = 15,720.00")
         if (/บวกกลับ|ปรับปรุง|คืนยอด/.test(txt)) {
           var ac = findCell(r, /บวกกลับ|ปรับปรุง|คืนยอด/), atx = S_(r[ac]);
           var am = atx.match(/=\s*([\d,]+(?:\.\d+)?)/);
           var amt = am ? num(am[1]) : 0;
           if (amt) { txs.push({ type: 'adj', date: date, invNo: '', invAmt: 0, srNo: '', srAmt: -amt, biNo: '', netAmt: 0, note: atx });
             if (colRun >= 0 && isNum(r[colRun])) runEnd = num(r[colRun]); }
-        } else if (d) {                                                           // แถวอนุมัติ/รับเงิน
+        } else if (d) {
           if (!approvedDate) approvedDate = d;
           if (t === 'a') { var rv0 = colInvAmt >= 0 ? num(r[colInvAmt]) : 0; if (!rv0 && colRecv >= 0) rv0 = num(r[colRecv]);
             if (rv0) receipts.push({ date: d, amount: rv0, ref: colNote >= 0 ? S_(r[colNote]) : '' }); }
@@ -1414,14 +1490,14 @@ function parseWorkbookCULAC(wb, t, XL) {
         if (!biNo && /^BI\d/i.test(s)) biNo = s;
       }
       if (t === 'w') {
-        if (ivc === 1) {                    // แบบมาตรฐาน: IV | จำนวน | SR | จำนวนลดหนี้ | BI | จำนวนเรียกเก็บ
+        if (ivc === 1) {
           invAmt = num(r[2]); srAmt = num(r[4]); bill = isNum(r[6]) ? num(r[6]) : Math.max(0, invAmt - srAmt);
-        } else {                            // แบบเก่า (2473014): IV | จำนวน | อนุมัติ | ลดหย่อน | คงเหลือ | เรียกเก็บ
+        } else {
           invAmt = num(r[3]); srAmt = num(r[5]); bill = isNum(r[7]) ? num(r[7]) : Math.max(0, invAmt - srAmt);
         }
       } else {
         srAmt = colHak >= 0 ? num(r[colHak]) : 0;
-        if (!srAmt) {                       // ไม่มียอดหัก = ใบแจ้งเพื่อรับเงินล่วงหน้า
+        if (!srAmt) {
           var rv1 = colRecv >= 0 ? num(r[colRecv]) : 0;
           if (rv1) receipts.push({ date: date, amount: rv1, ref: invNo });
           continue;
@@ -1509,10 +1585,18 @@ function doJsonImport(ev,t){
   fetchPasswords();
   loadLocal('w');
   loadLocal('a');
-  // ข้อมูลเริ่มต้นถือว่าสะอาด (ยังไม่มีการแก้ไขจากผู้ใช้)
   markClean('w'); markClean('a');
   if(GAS_URL){ doSync('w',false); doSync('a',false); }
-  else { setConn('c-off','ออฟไลน์'); }
+  else {
+    setConn('c-off','ออฟไลน์');
+    // แสดง hint ครั้งแรก
+    setTimeout(function(){
+      if(!GAS_URL && !localStorage.getItem('culac_settings_seen')){
+        try{ localStorage.setItem('culac_settings_seen','1'); }catch(e){}
+        toast('ยังไม่ได้ตั้งค่า Google Sheets — กดไอคอนเฟืองมุมขวาบนเพื่อตั้งค่า','info',6000);
+      }
+    }, 1200);
+  }
 })();
 </script>
 </body>
